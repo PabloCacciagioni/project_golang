@@ -12,9 +12,10 @@ services:
   
   db:
     image: postgres:16-alpine
-    ports: 
-      - 5432:5432 
+    container_name: psql
     environment:
       - POSTGRES_DB=tododb
       - POSTGRES_USER=todouser
       - POSTGRES_PASSWORD=todopass
+    ports:
+      - "5432:5432"
