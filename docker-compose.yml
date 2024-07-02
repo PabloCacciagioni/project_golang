@@ -2,19 +2,21 @@ services:
   todoapp:
     build: .
     ports:
-      - 3000:3000
+      - "8000:8000"
+  mysql:
+    image: mysql:8.0
+    restart: always
     environment:
-      - POSTGRES_DB=tododb
-      - POSTGRES_USER=todouser
-      - POSTGRES_PASSWORD=todopass
-    depends_on:
-      - db
-  
-  db:
-    image: postgres:16-alpine
-    ports: 
-      - 5432:5432 
-    environment:
-      - POSTGRES_DB=tododb
-      - POSTGRES_USER=todouser
-      - POSTGRES_PASSWORD=todopass
+      MYSQL_DATABASE: 'tododb'
+      MYSQL_USER: 'todouser'
+      MYSQL_PASSWORD: 'todopass'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
