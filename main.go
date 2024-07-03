@@ -9,9 +9,9 @@ import (
 )
 
 type Todo struct {
-	ID          uint   `gorm:"primaryKey;autoIncrement"`
-	Title       string `gorm:"size:255;not null"`
-	Description string `gorm:"type:text"`
+	ID          uint   `gorm:"primaryKey;type:BIGINT UNSIGNED AUTO_INCREMENT"`
+	Title       string `gorm:"type:VARCHAR(255);not null"`
+	Description string `gorm:"type:TEXT"`
 }
 
 func main() {
@@ -31,5 +31,7 @@ func main() {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	db.AutoMigrate(&Todo{})
+	if err := db.AutoMigrate(&Todo{}); err != nil {
+		log.Fatalf("Error during auto migration: %v", err)
+	}
 }
