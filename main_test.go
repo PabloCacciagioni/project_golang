@@ -19,7 +19,7 @@ func TestSaveTodoItem(t *testing.T) {
 		t.Fatalf("Error during auto migration: %v", err)
 	}
 
-	todo := Todo{Title: "Test Todo", Description: "This is a test todo item"}
+	todo := Todo{TodoTitle: "Test Todo", Description: "This is a test todo item"}
 
 	if err := db.Create(&todo).Error; err != nil {
 		t.Fatalf("Error saving todo item: %v", err)
@@ -30,7 +30,7 @@ func TestSaveTodoItem(t *testing.T) {
 		t.Fatalf("Error retrieving todo item: %v", err)
 	}
 
-	assert.Equal(t, todo.Title, retrievedTodo.Title)
+	assert.Equal(t, todo.TodoTitle, retrievedTodo.TodoTitle)
 	assert.Equal(t, todo.Description, retrievedTodo.Description)
 	assert.NotEqual(t, uint(0), retrievedTodo.ID)
 }
