@@ -1,36 +1,41 @@
-package routes
+package main
 
 import (
 	"io"
 	"net/http"
 	"testing"
 
-	"github.com/PabloCacciagioni/project_golang.git/database"
+	"github.com/PabloCacciagioni/project_golang.git/config"
+	"github.com/PabloCacciagioni/project_golang.git/models"
+	"github.com/PabloCacciagioni/project_golang.git/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-func setUpRoute(app *fiber.App) {
-	app.Get("/book/:id", GetTodo)
-	app.Post("/book", AddTodo)
-	app.Put("/book/:id", Update)
-	app.Delete("/book/:id", Delete)
-}
+func initTestDatabase() (*gorm.DB, error) {
+	dsn := config.GetDBConnection()
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
 
-func Setup() *fiber.App {
-	app := fiber.New()
-	database.ConnectDb()
-	setUpRoute(app)
-	return app
-}
+	if err := db.AutoMigrate(&models.Todo{}); err != nil {
+		return nil, err
+	}
 
+	return db, nil
+}
 func TestIndexRoute(t *testing.T) {
+	db, err := initTestDatabase()
+	if err != nil {
+		t.Fatalf("Failed to connect to database: %v", err)
+	}
 
 	tests := []struct {
-		description string
-
-		route string
-
+		description   string
+		route         string
 		expectedError bool
 		expectedCode  int
 		expectedBody  string
@@ -51,15 +56,17 @@ func TestIndexRoute(t *testing.T) {
 		},
 	}
 
-	app := Setup()
+	app := fiber.New()
+
+	app.Use(func(c *fiber.Ctx) error {
+		c.Locals("db", db)
+		return c.Next()
+	})
+
+	routes.SetupRoutes(app)
 
 	for _, test := range tests {
-		req, _ := http.NewRequest(
-			"GET",
-			test.route,
-			nil,
-		)
-
+		req, _ := http.NewRequest("GET", test.route, nil)
 		res, err := app.Test(req, -1)
 
 		assert.Equalf(t, test.expectedError, err != nil, test.description)
@@ -71,7 +78,6 @@ func TestIndexRoute(t *testing.T) {
 		assert.Equalf(t, test.expectedCode, res.StatusCode, test.description)
 
 		body, err := io.ReadAll(res.Body)
-
 		assert.Nilf(t, err, test.description)
 
 		assert.Equalf(t, test.expectedBody, string(body), test.description)

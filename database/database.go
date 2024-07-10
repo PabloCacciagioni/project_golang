@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/PabloCacciagioni/project_golang.git/config"
 	"github.com/PabloCacciagioni/project_golang.git/models"
 
 	"gorm.io/driver/mysql"
@@ -14,19 +15,17 @@ var (
 	DBConn *gorm.DB
 )
 
-func ConnectDb() {
-
-	dsn := "todouser:todopass@tcp(127.0.0.1:3306)/testdb?charset=utf8mb4&parseTime=True&loc=Local"
-
+func ConnectDb() *gorm.DB {
+	dsn := config.GetDBConnection()
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		log.Fatal("Failed to connect to database. \n", err)
+		log.Panic("Connection error")
 		os.Exit(2)
 	}
 
-	log.Println("connected")
+	log.Println("Connected")
 	db.AutoMigrate(&models.Todo{})
 	DBConn = db
-
+	return DBConn
 }

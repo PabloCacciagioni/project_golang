@@ -3,31 +3,47 @@ package main
 import (
 	"log"
 
-	"github.com/PabloCacciagioni/project_golang.git/database"
+	"github.com/PabloCacciagioni/project_golang.git/config"
+	"github.com/PabloCacciagioni/project_golang.git/models"
 	"github.com/PabloCacciagioni/project_golang.git/routes"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-func setUpRoutes(app *fiber.App) {
-	app.Get("/book/:id", routes.GetTodo)
-	app.Post("/book", routes.AddTodo)
-	app.Put("/book/:id", routes.Update)
-	app.Delete("/book/:id", routes.Delete)
+func initDatabase() (*gorm.DB, error) {
+	dsn := config.GetDBConnection()
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.AutoMigrate(&models.Todo{}); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
 func main() {
-	database.ConnectDb()
 	app := fiber.New()
 
-	setUpRoutes(app)
-
-	app.Use(cors.New())
+	db, err := initDatabase()
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
 
 	app.Use(func(c *fiber.Ctx) error {
-		return c.SendStatus(404)
+		c.Locals("db", db)
+		return c.Next()
 	})
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("OK")
+	})
+
+	routes.SetupRoutes(app)
 
 	log.Fatal(app.Listen(":8000"))
 }
