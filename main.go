@@ -3,35 +3,47 @@ package main
 import (
 	"log"
 
+	"github.com/PabloCacciagioni/project_golang.git/config"
+	"github.com/PabloCacciagioni/project_golang.git/models"
+	"github.com/PabloCacciagioni/project_golang.git/routes"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-type Todo struct {
-	ID          uint   `gorm:"primaryKey;type:BIGINT UNSIGNED AUTO_INCREMENT"`
-	Title       string `gorm:"type:VARCHAR(255);not null"`
-	Description string `gorm:"type:TEXT"`
+func initDatabase() (*gorm.DB, error) {
+	dsn := config.GetDBConnection()
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.AutoMigrate(&models.Todo{}); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
 func main() {
 	app := fiber.New()
 
-	app.Get("/status", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status": "ok",
-		})
+	db, err := initDatabase()
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	app.Use(func(c *fiber.Ctx) error {
+		c.Locals("db", db)
+		return c.Next()
 	})
 
-	app.Listen(":3000")
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("OK")
+	})
 
-	dsn := "todouser:todopass@tcp(127.0.0.1:3306)/tododb?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Error connecting to database: %v", err)
-	}
+	routes.SetupRoutes(app)
 
-	if err := db.AutoMigrate(&Todo{}); err != nil {
-		log.Fatalf("Error during auto migration: %v", err)
-	}
+	log.Fatal(app.Listen(":8000"))
 }
