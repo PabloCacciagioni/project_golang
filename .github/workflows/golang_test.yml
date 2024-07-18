@@ -1,16 +1,7 @@
 name: Golang Tests
 
-on:
-  push:
-    branches:
-      - master
-    paths-ignore:
-      - 'README.md'
-  pull_request:
-    branches:
-      - master
-    paths-ignore:
-      - 'README.md'
+on: [push, pull_request]
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
