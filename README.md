@@ -29,8 +29,8 @@ docker-compose up -d
 ```
 
 This will raise two services: 
--"todoapp": The application in Go. 
--"mysql": The mysql database.
+- "todoapp": The application in Go. 
+- "mysql": The mysql database.
 
 ### Step 4: Database migrations 
 
@@ -42,10 +42,10 @@ The application should be running at http://localhost:8000.
 
 Available routes
 
-```GET /todos/:id:``` Obtain a todo by ID.
-```POST /todos:``` Create a new todo.
-```PUT /todos/:id:``` Update a todo by ID. 
-```DELETE /todos/:id:``` Delete a todo by ID.
+- ```GET /todos/:id:``` Obtain a todo by ID.
+- ```POST /todos:``` Create a new todo.
+- ```PUT /todos/:id:``` Update a todo by ID. 
+- ```DELETE /todos/:id:``` Delete a todo by ID.
 
 
 ## Test
@@ -59,12 +59,12 @@ go test -v routes_test.go
 ## Project structure 
 
 
-```main.go:``` Application entry point.
-```database/:``` Database connection and configuration.
-```config/:``` Configuration of the URL used for the database connection.
-```models/:``` Definition of data models.
-```routes/:``` Definition of routes and controllers.
-```Dockerfile:``` Docker configuration file for the application.
-```docker-compose.yml:``` Docker Compose configuration file.
+- ```main.go:``` Application entry point.
+- ```database/:``` Database connection and configuration.
+- ```config/:``` Configuration of the URL used for the database connection.
+- ```models/:``` Definition of data models.
+- ```routes/:``` Definition of routes and controllers.
+- ```Dockerfile:``` Docker configuration file for the application.
+- ```docker-compose.yml:``` Docker Compose configuration file.
 
 
