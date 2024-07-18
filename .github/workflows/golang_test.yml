@@ -3,12 +3,12 @@ name: Golang Tests
 on:
   push:
     branches:
-      - master
+      - origin
     paths-ignore:
       - 'README.md'
   pull_request:
     branches:
-      - master
+      - origin
     paths-ignore:
       - 'README.md'
 
