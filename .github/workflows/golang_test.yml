@@ -1,0 +1,56 @@
+name: Golang Tests
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        ports: 
+          - 3306:3306
+        env:
+          MYSQL_DATABASE: 'tododb'
+          MYSQL_USER: 'todouser'
+          MYSQL_PASSWORD: 'todopass'
+          MYSQL_ROOT_PASSWORD: 'password'
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.16
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Wait for MySQL
+        run: until nc -z -v -w30 127.0.0.1 3306; do echo 'Waiting for MySQL...'; sleep 1; done
+
+      - name: Run tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: todouser
+          DB_PASS: todopass
+          DB_NAME: tododb
+        run: go test -v routes_test.go
