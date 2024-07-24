@@ -40,8 +40,6 @@ jobs:
 
       - name: Run CI
         uses: dominikh/staticcheck-action@v1.2.0
-        with:
-          version: "2022.1.1"
 
       - name: Wait for MySQL
         run: until nc -z -v -w30 127.0.0.1 3306; do echo 'Waiting for MySQL...'; sleep 1; done
