@@ -38,9 +38,6 @@ jobs:
       - name: Install dependencies
         run: go get ./...
 
-      - name: Install Staticcheck
-        run: go install honnef.co/go/tools/cmd/staticcheck@latest
-      
       - name: Run CI
         uses: dominikh/staticcheck-action@v1.2.0
         with:
