@@ -33,14 +33,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.21
+          go-version: 1.21.6
 
       - name: Install dependencies
         run: go get ./...
 
-      - uses: dominikh/staticcheck-action@v1.2.0
-        with: 
-          version: "2022.1.1" 
+      - name: Run StaticCheck
+        uses: dominikh/staticcheck-action@latest
+
 
       - name: Wait for MySQL
         run: until nc -z -v -w30 127.0.0.1 3306; do echo 'Waiting for MySQL...'; sleep 1; done
