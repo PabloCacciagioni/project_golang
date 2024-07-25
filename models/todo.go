@@ -13,8 +13,8 @@ type Todo struct {
 	Description string `json:"description" validate:"required"`
 }
 
-var validate *validator.Validate
+var validate = validator.New()
 
-func init() {
-	validate = validator.New()
+func (t *Todo) Validate() error {
+	return validate.Struct(t)
 }
