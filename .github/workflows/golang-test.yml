@@ -38,6 +38,11 @@ jobs:
       - name: Install dependencies
         run: go get ./...
 
+      - name: Run StaticCheck
+        uses: dominikh/staticcheck-action@v1.2.0
+        with:
+          install-go: false 
+
       - name: Wait for MySQL
         run: until nc -z -v -w30 127.0.0.1 3306; do echo 'Waiting for MySQL...'; sleep 1; done
 
@@ -49,3 +54,4 @@ jobs:
           DB_PASS: todopass
           DB_NAME: tododb
         run: go test -v ./...
+        

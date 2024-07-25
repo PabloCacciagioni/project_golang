@@ -4,26 +4,10 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/PabloCacciagioni/project_golang.git/config"
 	"github.com/PabloCacciagioni/project_golang.git/models"
 )
-
-func initTestDatabase() (*gorm.DB, error) {
-	dsn := config.GetDBConnection()
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := db.AutoMigrate(&models.Todo{}); err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
 
 func SetupRoutes(app *fiber.App) {
 	app.Post("/todo", AddTodo)
