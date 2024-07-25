@@ -6,8 +6,34 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
+	"github.com/PabloCacciagioni/project_golang.git/database"
 	"github.com/PabloCacciagioni/project_golang.git/models"
+	"github.com/go-playground/validator/v10"
 )
+
+var validate = validator.New()
+
+func AddTodoValidation(todo *models.Todo) error {
+	return validate.Struct(todo)
+}
+
+func AddTodoHandler(c *fiber.Ctx) error {
+	todo := new(models.Todo)
+	if err := c.BodyParser(todo); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Failed to parse request body",
+		})
+	}
+
+	if err := AddTodoValidation(todo); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	database.DBConn.Create(&todo)
+	return c.Status(fiber.StatusCreated).JSON(todo)
+}
 
 func SetupRoutes(app *fiber.App) {
 	app.Post("/todo", AddTodo)

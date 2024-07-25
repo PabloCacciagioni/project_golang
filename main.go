@@ -29,6 +29,9 @@ func initDatabase() (*gorm.DB, error) {
 func main() {
 	app := fiber.New()
 
+	app.Post("/todos", routes.AddTodoHandler)
+	app.Listen(":8000")
+
 	db, err := initDatabase()
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
