@@ -3,14 +3,17 @@ services:
     build: .
     ports:
       - "8000:8000"
-  mysql:
-    image: mysql:8.0
-    restart: always
     environment:
-      MYSQL_DATABASE: 'tododb'
-      MYSQL_USER: 'todouser'
-      MYSQL_PASSWORD: 'todopass'
-      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_URI: "todouser:todopass@tcp(mysql:3306)/tododb?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify&autocommit=true&collation=utf8mb4_unicode_ci"
+    depends_on:
+      - mysql
+  mysql:
+    image: percona/percona-server:8.0.36-28.1-multi
+    environment:
+      MYSQL_DATABASE: "tododb"
+      MYSQL_USER: "todouser"
+      MYSQL_PASSWORD: "todopass"
+      MYSQL_ROOT_PASSWORD: "password"
     ports:
       - "3306:3306"
     expose:
