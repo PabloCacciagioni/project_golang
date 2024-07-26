@@ -10,7 +10,7 @@ type Todo struct {
 
 	ID          uint   `json:"id" gorm:"primaryKey"`
 	Title       string `json:"title" validate:"required,min=3,max=100"`
-	Description string `json:"description" validate:"required"`
+	Description string `json:"description" validate:"required,max=1000"`
 }
 
 var validate = validator.New()
