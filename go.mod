@@ -1,10 +1,13 @@
-module github.com/PabloCacciagioni/project_golang.git
+module github.com/PabloCacciagioni/project_golang
 
-go 1.21.6
+go 1.22
+
+toolchain go1.22.5
 
 require github.com/gofiber/fiber/v2 v2.52.4
 
 require (
+	github.com/brianvoe/gofakeit/v7 v7.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

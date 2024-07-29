@@ -4,28 +4,30 @@ import (
 	"log"
 	"os"
 
-	"github.com/PabloCacciagioni/project_golang.git/config"
-	"github.com/PabloCacciagioni/project_golang.git/models"
+	"github.com/PabloCacciagioni/project_golang/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-var (
-	DBConn *gorm.DB
-)
+const defaultDSN = "todouser:todopass@/tododb?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify&autocommit=true&collation=utf8mb4_unicode_ci"
 
 func ConnectDb() *gorm.DB {
-	dsn := config.GetDBConnection()
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-
+	db, err := gorm.Open(mysql.Open(generateDSNFromEnv()), &gorm.Config{})
 	if err != nil {
-		log.Panic("Connection error")
-		os.Exit(2)
+		log.Fatalln("Failed to connect to the database with error: " + err.Error())
 	}
 
-	log.Println("Connected")
-	db.AutoMigrate(&models.Todo{})
-	DBConn = db
-	return DBConn
+	// TODO: Fix this crap
+	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&models.Todo{})
+
+	return db
+}
+
+func generateDSNFromEnv() string {
+	mysqlURI := os.Getenv("MYSQL_URI")
+	if mysqlURI == "" {
+		mysqlURI = defaultDSN
+	}
+	return mysqlURI
 }
