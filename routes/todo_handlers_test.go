@@ -105,6 +105,7 @@ func TestDeleteTodo_Succes(t *testing.T) {
 	assert.Equal(t, fiber.StatusOK, deleteResp.StatusCode)
 
 	getReq := httptest.NewRequest("GET", "/todos/"+strconv.Itoa(int(newTodo.ID)), nil)
-	getResp, _ := app.Test(getReq)
+	getResp, err := app.Test(getReq)
+	assert.Nil(t, err)
 	assert.Equal(t, fiber.StatusNotFound, getResp.StatusCode)
 }
