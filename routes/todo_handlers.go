@@ -55,7 +55,7 @@ func GetTodo(c *fiber.Ctx) error {
 
 	todo, err := models.GetTodo(id, db)
 	if err != nil {
-		return fiber.NewError(fiber.ErrInternalServerError.Code, err.Error())
+		return fiber.NewError(fiber.ErrNotFound.Code, err.Error())
 	}
 	return c.Status(fiber.StatusOK).JSON(todo)
 }
