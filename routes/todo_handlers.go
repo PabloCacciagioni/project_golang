@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/PabloCacciagioni/project_golang/models"
 	"github.com/gofiber/fiber/v2"
@@ -11,12 +13,30 @@ import (
 func ListTodos(c *fiber.Ctx) error {
 	db := c.Locals("db").(*gorm.DB)
 
+	// Get all the data from the database
 	allTodos, err := models.ListTodos(db)
 	if err != nil {
 		return fiber.NewError(fiber.ErrInternalServerError.Code, err.Error())
 	}
 
-	return c.Status(fiber.StatusOK).JSON(allTodos)
+	// Generate HTML
+	var htmlOutput strings.Builder
+	for _, todo := range allTodos {
+		htmlOutput.WriteString(fmt.Sprintf(`
+            <div class="list-group-item" id="todo-%d">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">%s</h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" hx-put="/todos/%d" hx-target="#todo-%d" hx-swap="outerHTML">Editar</button>
+                        <button class="btn btn-sm btn-outline-danger" hx-delete="/todos/%d" hx-swap="outerHTML" hx-confirm="¿Estás seguro de que quieres eliminar este todo?">Eliminar</button>
+                    </div>
+                </div>
+                <p class="mb-1">%s</p>
+            </div>`, todo.ID, todo.Title, todo.ID, todo.ID, todo.ID, todo.Description))
+	}
+
+	// Enviar el HTML generado como respuesta
+	return c.Status(fiber.StatusOK).SendString(htmlOutput.String())
 }
 
 func AddTodo(c *fiber.Ctx) error {
