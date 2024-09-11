@@ -7,61 +7,60 @@ import (
 
 	"github.com/PabloCacciagioni/project_golang/models"
 	"github.com/gofiber/fiber/v2"
+	"github.com/sujit-baniya/flash"
 	"gorm.io/gorm"
 )
 
 func ListTodos(c *fiber.Ctx) error {
 	db := c.Locals("db").(*gorm.DB)
+	todo := new(models.Todo)
+	todo.CreatedBy = c.Locals("userId").(uint64)
 
-	// Get all the data from the database
-	allTodos, err := models.ListTodos(db)
+	fm := fiber.Map{
+		"type": "alert-error",
+	}
+
+	todosSlice, err := todo.ListTodo(todo.CreatedBy, db)
 	if err != nil {
-		return fiber.NewError(fiber.ErrInternalServerError.Code, err.Error())
+		fm["message"] = fmt.Sprintf("something went wrong: %s", err)
+		return flash.WithError(c, fm).Redirect("/todo/list")
 	}
 
-	// Generate HTML
-	var htmlOutput strings.Builder
-	for _, todo := range allTodos {
-		htmlOutput.WriteString(fmt.Sprintf(`
-            <div class="list-group-item" id="todo-%d">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">%s</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary" hx-put="/todos/%d" hx-target="#todo-%d" hx-swap="outerHTML">Editar</button>
-                        <button class="btn btn-sm btn-outline-danger" hx-delete="/todos/%d" hx-swap="outerHTML" hx-confirm="¿Estás seguro de que quieres eliminar este todo?">Eliminar</button>
-                    </div>
-                </div>
-                <p class="mb-1">%s</p>
-            </div>`, todo.ID, todo.Title, todo.ID, todo.ID, todo.ID, todo.Description))
-	}
-
-	// Enviar el HTML generado como respuesta
-	return c.Status(fiber.StatusOK).SendString(htmlOutput.String())
+	return c.Render("todo/index", fiber.Map{
+		"Page":     "Task List",
+		"Todos":    todosSlice,
+		"UserId":   c.Locals("userId").(uint64),
+		"Username": c.Locals("username").(string),
+		"Message":  flash.Get(c),
+	})
 }
 
 func AddTodo(c *fiber.Ctx) error {
-	todo := models.Todo{}
-
-	// First we validate they are sending JSON
-	if err := c.BodyParser(&todo); err != nil {
-		return fiber.NewError(fiber.ErrUnprocessableEntity.Code, err.Error())
-	}
-
-	// Then we validate they send the JSON as we expect it
-	if err := todo.Validate(); err != nil {
-		return fiber.NewError(fiber.ErrUnprocessableEntity.Code, err.Error())
-	}
-
-	// Then we extract the database from context
 	db := c.Locals("db").(*gorm.DB)
 
-	// Then we try to save it and if it fails we send back the message
-	if err := todo.Create(db); err != nil {
-		return fiber.NewError(fiber.ErrInternalServerError.Code, err.Error())
+	if c.Method() == "POST" {
+		fm := fiber.Map{
+			"type": "alert-error",
+		}
+
+		newTodo := new(models.Todo)
+		newTodo.CreatedBy = c.Locals("userId").(uint64)
+		newTodo.Title = strings.TrimSpace(c.FormValue("title"))
+		newTodo.Description = strings.TrimSpace(c.FormValue("description"))
+
+		if err := newTodo.Create(db); err != nil {
+			fm["message"] = fmt.Sprintf("something went wrong: %s", err)
+			return flash.WithError(c, fm).Redirect("/todo/list")
+		}
+
+		return c.Redirect("/todo/list")
 	}
 
-	// If everything succeeded we then send the all is fine message
-	return c.Status(fiber.StatusCreated).JSON(todo)
+	return c.Render("todo/edit", fiber.Map{
+		"Page":     "Create Todo",
+		"UserId":   c.Locals("userId").(uint64),
+		"Username": c.Locals("username").(string),
+	})
 }
 
 func GetTodo(c *fiber.Ctx) error {
@@ -73,7 +72,9 @@ func GetTodo(c *fiber.Ctx) error {
 
 	db := c.Locals("db").(*gorm.DB)
 
-	todo, err := models.GetTodo(id, db)
+	createdBy := c.Locals("userId").(uint64)
+
+	todo, err := models.GetTodo(id, createdBy, db)
 	if err != nil {
 		return fiber.NewError(fiber.ErrNotFound.Code, err.Error())
 	}
@@ -81,52 +82,89 @@ func GetTodo(c *fiber.Ctx) error {
 }
 
 func UpdateTodo(c *fiber.Ctx) error {
-	// First we convert the string to the proper unsigned int
-	id, err := strconv.ParseUint(c.Params("id"), 10, 0)
+	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
 		return fiber.NewError(fiber.ErrUnprocessableEntity.Code, err.Error())
 	}
+
 	db := c.Locals("db").(*gorm.DB)
+	userId := c.Locals("userId").(uint64)
 
-	todo, err := models.GetTodo(id, db)
+	todo, err := models.GetTodo(id, userId, db)
 	if err != nil {
-		return fiber.NewError(fiber.ErrInternalServerError.Code, err.Error())
+		fm := fiber.Map{
+			"type":    "alert-error",
+			"message": fmt.Sprintf("something went wrong: %s", err),
+		}
+		return flash.WithError(c, fm).Redirect("/todo/list")
 	}
 
-	// then we validate they are sending JSON
-	if err := c.BodyParser(&todo); err != nil {
-		return fiber.NewError(fiber.ErrUnprocessableEntity.Code, err.Error())
+	if c.Method() == "POST" {
+		todo.Title = strings.TrimSpace(c.FormValue("title"))
+		todo.Description = strings.TrimSpace(c.FormValue("description"))
+
+		if err := todo.Validate(); err != nil {
+			fm := fiber.Map{
+				"type":    "alert-error",
+				"message": fmt.Sprintf("Validation failed: %s", err),
+			}
+			return flash.WithError(c, fm).Redirect("/todo/edit/%d", int(todo.ID))
+		}
+
+		if err := todo.Update(db); err != nil {
+			fm := fiber.Map{
+				"type":    "alert-error",
+				"message": fmt.Sprintf("something went wrong: %s", err),
+			}
+			return flash.WithError(c, fm).Redirect("todo/list")
+		}
+
+		fm := fiber.Map{
+			"type":    "alert-succes",
+			"message": "Task successfully updated!!",
+		}
+
+		return flash.WithSuccess(c, fm).Redirect("/todo/list")
 	}
 
-	// Then we validate they send the JSON as we expect it
-	if err := todo.Validate(); err != nil {
-		return fiber.NewError(fiber.ErrUnprocessableEntity.Code, err.Error())
-	}
-
-	// Here we retrieve the current value
-	if err := todo.Update(db); err != nil {
-		return fiber.NewError(fiber.ErrInternalServerError.Code, err.Error())
-	}
-
-	return c.Status(fiber.StatusOK).JSON(todo)
+	return c.Render("todo/edit", fiber.Map{
+		"Page":     "Edit todo",
+		"Todo":     todo,
+		"UserId":   userId,
+		"Username": c.Locals("username").(string),
+	})
 }
 
 func DeleteTodo(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10, 0)
+	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
 		return fiber.NewError(fiber.ErrUnprocessableEntity.Code, err.Error())
 	}
-	todo := models.Todo{ID: id}
 
 	db := c.Locals("db").(*gorm.DB)
+	userId := c.Locals("userId").(uint64)
 
-	// Here we delete the corresponding todo
-	if err := todo.Delete(db); err != nil {
-		return fiber.NewError(fiber.ErrInternalServerError.Code, err.Error())
+	todo, err := models.GetTodo(id, userId, db)
+	if err != nil {
+		fm := fiber.Map{
+			"type":    "alert-error",
+			"message": fmt.Sprintf("something went wrong: %s", err),
+		}
+		return flash.WithError(c, fm).Redirect("/todo/list", fiber.StatusSeeOther)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"deleted": true,
-		"id":      id,
-	})
+	if err := todo.Delete(db); err != nil {
+		fm := fiber.Map{
+			"type":    "alert-error",
+			"message": fmt.Sprintf("something went wrong: %s", err),
+		}
+		return flash.WithError(c, fm).Redirect("/todo/list", fiber.StatusSeeOther)
+	}
+
+	fm := fiber.Map{
+		"type":    "alert-success",
+		"message": "Task successfully deleted",
+	}
+
+	return flash.WithSuccess(c, fm).Redirect("/todo/list", fiber.StatusSeeOther)
 }

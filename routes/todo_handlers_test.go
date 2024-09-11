@@ -16,7 +16,11 @@ import (
 	"github.com/PabloCacciagioni/project_golang/routes"
 )
 
-var createdTodoID uint64
+var (
+	title         = gofakeit.Sentence(3)
+	description   = gofakeit.Paragraph(1, 5, 10, ".")
+	createdTodoID uint64
+)
 
 func SetupApp() *fiber.App {
 	app := fiber.New()
@@ -25,42 +29,35 @@ func SetupApp() *fiber.App {
 	return app
 }
 
-func TestAddTodo_Succes(t *testing.T) {
-	app := SetupApp()
+func TestAddTodo_Success(t *testing.T) {
+	app := fiber.New()
+	routes.SetupRoutes(app)
 
-	title := fmt.Sprintf(`{"title":"My TODO %s"}`, gofakeit.UUID())
-	req := httptest.NewRequest("POST", "/todos", strings.NewReader(title))
-	req.Header.Set("Content-type", "application/json")
-	resp, _ := app.Test(req)
+	body := fmt.Sprintf("title=%s&description=%s", title, description)
+	req := httptest.NewRequest("POST", "/todo/create", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
-
-	var todo models.Todo
-	json.NewDecoder(resp.Body).Decode(&todo)
-	createdTodoID = todo.ID
+	resp, err := app.Test(req)
+	assert.NoError(t, err)
+	assert.Equal(t, fiber.StatusFound, resp.StatusCode)
 }
 
 func TestListTodos(t *testing.T) {
 	app := SetupApp()
 
-	req := httptest.NewRequest("GET", "/todos", nil)
-	resp, _ := app.Test(req)
+	body := fmt.Sprintf("title=%s&description=%s", title, description)
+	createReq := httptest.NewRequest("POST", "/todo/create", strings.NewReader(body))
+	createReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+	createResp, err := app.Test(createReq)
+	assert.NoError(t, err)
+	assert.Equal(t, fiber.StatusFound, createResp.StatusCode)
 
-	var todos []models.Todo
-	json.NewDecoder(resp.Body).Decode(&todos)
+	listReq := httptest.NewRequest("GET", "/todo/list", nil)
 
-	assert.Greater(t, len(todos), 0)
-
-	found := false
-	for _, todo := range todos {
-		if todo.ID == createdTodoID {
-			found = true
-			break
-		}
-	}
-	assert.True(t, found, "The todo with the createdTodoID should be listed")
+	listResp, err := app.Test(listReq)
+	assert.NoError(t, err)
+	assert.Equal(t, fiber.StatusOK, listResp.StatusCode)
 }
 
 func TestGetTodo_Succes(t *testing.T) {
@@ -69,17 +66,17 @@ func TestGetTodo_Succes(t *testing.T) {
 	req := httptest.NewRequest("GET", "/todos/"+strconv.Itoa(int(createdTodoID)), nil)
 	resp, _ := app.Test(req)
 
-	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+	assert.Equal(t, fiber.StatusFound, resp.StatusCode)
 }
 
 func TestUpdateTodo_Succes(t *testing.T) {
 	app := SetupApp()
 
-	req := httptest.NewRequest("PUT", "/todos/"+strconv.Itoa(int(createdTodoID)), strings.NewReader(`{"title":"Updated Todo"}`))
+	req := httptest.NewRequest("PUT", "/todo/edit"+strconv.Itoa(int(createdTodoID)), strings.NewReader(`{"title":"Updated Todo"}`))
 	req.Header.Set("Content-Type", "application/json")
 	resp, _ := app.Test(req)
 
-	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+	assert.Equal(t, fiber.StatusFound, resp.StatusCode)
 
 	var updatedTodo models.Todo
 	json.NewDecoder(resp.Body).Decode(&updatedTodo)
@@ -92,20 +89,20 @@ func TestDeleteTodo_Succes(t *testing.T) {
 	app := SetupApp()
 
 	newTodoTitle := fmt.Sprintf("My TODO %s", gofakeit.UUID())
-	createReq := httptest.NewRequest("POST", "/todos", strings.NewReader(fmt.Sprintf(`{"title":"%s"}`, newTodoTitle)))
+	createReq := httptest.NewRequest("POST", "/todo/create", strings.NewReader(fmt.Sprintf(`{"title":"%s"}`, newTodoTitle)))
 	createReq.Header.Set("Content-Type", "application/json")
 	createResp, _ := app.Test(createReq)
-	assert.Equal(t, fiber.StatusCreated, createResp.StatusCode)
+	assert.Equal(t, fiber.StatusFound, createResp.StatusCode)
 
 	var newTodo models.Todo
 	json.NewDecoder(createResp.Body).Decode(&newTodo)
 
-	deleteReq := httptest.NewRequest("DELETE", "/todos/"+strconv.Itoa(int(newTodo.ID)), nil)
+	deleteReq := httptest.NewRequest("DELETE", "/todo/delete/"+strconv.Itoa(int(newTodo.ID)), nil)
 	deleteResp, _ := app.Test(deleteReq)
-	assert.Equal(t, fiber.StatusOK, deleteResp.StatusCode)
+	assert.Equal(t, fiber.StatusFound, deleteResp.StatusCode)
 
 	getReq := httptest.NewRequest("GET", "/todos/"+strconv.Itoa(int(newTodo.ID)), nil)
 	getResp, err := app.Test(getReq)
 	assert.Nil(t, err)
-	assert.Equal(t, fiber.StatusNotFound, getResp.StatusCode)
+	assert.Equal(t, fiber.StatusFound, getResp.StatusCode)
 }

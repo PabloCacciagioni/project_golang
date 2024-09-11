@@ -34,6 +34,7 @@ func TestCreateTodo(t *testing.T) {
 	db := database.ConnectDb()
 
 	todo := models.Todo{
+		CreatedBy:   1,
 		Title:       gofakeit.LoremIpsumWord() + gofakeit.UUID(),
 		Description: gofakeit.LoremIpsumSentence(5),
 	}
@@ -54,6 +55,7 @@ func TestUpdateTodo(t *testing.T) {
 	db := database.ConnectDb()
 
 	todo := models.Todo{
+		CreatedBy:   1,
 		Title:       gofakeit.LoremIpsumWord() + gofakeit.UUID(),
 		Description: gofakeit.LoremIpsumSentence(5),
 	}
@@ -75,6 +77,7 @@ func TestDeleteTodo(t *testing.T) {
 	db := database.ConnectDb()
 
 	todo := models.Todo{
+		CreatedBy:   1,
 		Title:       gofakeit.LoremIpsumWord() + gofakeit.UUID(),
 		Description: gofakeit.LoremIpsumSentence(5),
 	}
@@ -95,6 +98,7 @@ func TestGetTodo(t *testing.T) {
 	db := database.ConnectDb()
 
 	todo := models.Todo{
+		CreatedBy:   1,
 		Title:       gofakeit.LoremIpsumWord() + gofakeit.UUID(),
 		Description: gofakeit.LoremIpsumSentence(5),
 	}
@@ -104,7 +108,7 @@ func TestGetTodo(t *testing.T) {
 		t.Errorf("`todo.Create()` was expected to succeed but failed with err: %v\n", err)
 	}
 
-	anotherTodo, err := models.GetTodo(todo.ID, db)
+	anotherTodo, err := models.GetTodo(todo.ID, todo.CreatedBy, db)
 	if err != nil {
 		t.Errorf("`models.GetTodo()` was expected to succeed but failed with err: %v\n", err)
 	}
@@ -119,6 +123,7 @@ func TestListTodo(t *testing.T) {
 	db := database.ConnectDb()
 
 	todo := models.Todo{
+		CreatedBy:   1,
 		Title:       gofakeit.LoremIpsumWord() + gofakeit.UUID(),
 		Description: gofakeit.LoremIpsumSentence(5),
 	}
@@ -128,7 +133,7 @@ func TestListTodo(t *testing.T) {
 		t.Errorf("`todo.Create()` was expected to succeed but failed with err: %v\n", err)
 	}
 
-	allTodos, err := models.ListTodos(db)
+	allTodos, err := todo.ListTodo(todo.CreatedBy, db)
 	if err != nil {
 		t.Errorf("`models.ListTodos()` was expected to succeed but failed with err: %v\n", err)
 	}

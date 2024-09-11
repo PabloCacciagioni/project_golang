@@ -19,7 +19,7 @@ func ConnectDb() *gorm.DB {
 	}
 
 	// TODO: Fix this crap
-	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&models.Todo{})
+	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&models.Todo{}, &models.User{})
 
 	return db
 }
