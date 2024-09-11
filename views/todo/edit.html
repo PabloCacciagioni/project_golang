@@ -1,0 +1,31 @@
+<h1 class="text-2xl font-bold text-center mb-8">
+    {{ if .Todo }}
+    Update TODO # {{ .Todo.ID }}
+    {{ else }}
+    Create new TODO
+    {{ end }}
+</h1>
+
+<section class="max-w-2xl w-4/5 h-96 mx-auto bg-slate-600 rounded-lg shadow-xl">
+    <form class="rounded-xl flex flex-col gap-4 w-11/12 p-4 mx-auto" action="" method="post" hx-swap="transition:true">
+        <label class="flex flex-col justify-start gap-2">
+            Title:
+            <input class="input input-bordered input-primary bg-slate-800" type="text" name="title" {{ if .Todo }}value="{{ .Todo.Title }}" {{ end }}
+                required autofocus minlength="3" maxlength="64">
+        </label>
+        <label class="flex flex-col justify-start gap-2">
+            Description:
+            <textarea class="textarea textarea-primary h-36 max-h-36 bg-slate-800" name="description">{{ if .Todo }}{{ .Todo.Description }}{{ end }}</textarea>
+        </label>
+        <footer class="card-actions flex justify-between">
+            <div class="flex gap-4">
+                <button class="badge badge-primary p-4 hover:scale-[1.1]">
+                    {{ if .Todo }} Update {{ else }} Create {{ end }}
+                </button>
+                <a href="/todo/list" class="badge badge-neutral p-4 hover:scale-[1.1]">
+                    Cancel
+                </a>
+            </div>
+        </footer>
+    </form>
+</section>
