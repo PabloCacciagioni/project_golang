@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.5
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.0.4
+	github.com/brianvoe/gofakeit/v7 v7.1.1
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/stretchr/testify v1.9.0
